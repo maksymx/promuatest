@@ -3,8 +3,15 @@
     var chatAPI = {
 
         connect : function(done) {
+            var that = this;
+
             this.socket = io.connect('/chat');
             this.socket.on('connect', done);
+            this.socket.on('message', function(message){
+                if(that.onMessage){
+                    that.onMessage(message);
+                }
+            });
         },
 
         join : function(email, onJoin){
@@ -23,7 +30,7 @@
                 chatAPI.join($(form).find("[name='email']").val(), 
                     function(joined, name) {
                         if(joined){
-                            alert("You've joined Chatzilla");
+                            alert("You've joined PROM UA CHAT");
                             $(form).hide();
                             $(".compose-message-form").show();
                         }
@@ -43,11 +50,17 @@
                 );
             }
         });
+
+        chatAPI.onMessage = function(message){
+            $(".messages").append(
+                jQuery("<li>").html(message)
+            );
+        };
     };
 
     var ready = function(){
         bindUI();
-        console.log("Welcome to Chatzilla");
+        console.log("Welcome to PROM UA CHAT");
         chatAPI.connect(function(){});
     };
 
