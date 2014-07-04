@@ -42,19 +42,26 @@
         $(".compose-message-form").validate({
             submitHandler: function(form) {
                 chatAPI.sendMessage($(form).find("[name='message']").val(),
-                    function(sent, message){
+                    function(sent,message){
                         if(sent){
-                            alert("Your message was sent");
+                            $(".messages").append(
+                                jQuery("<li>").html(
+                                    "<b>Me</b>: " + message
+                                )
+                            );
+                            $(".messages").show();
                         }
-                    }
-                );
+                    });
             }
         });
 
         chatAPI.onMessage = function(message){
             $(".messages").append(
-                jQuery("<li>").html(message)
+                jQuery("<li>").html(
+                    "<b>" + message.sender + "</b>: " + message.content
+                )
             );
+            $(".messages").show();
         };
     };
 

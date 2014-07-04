@@ -39,11 +39,26 @@ class ChatNamespace(BaseNamespace, BroadcastMixin):
     def recv_disconnect(self):
         self.log("Client disconnected")
 
-    def on_join(self, name):
-        self.log("%s joined chat" % name)
-        return True, name
+    def on_join(self, email):
+        self.log("%s joined chat" % email)
+        self.session['email'] = email
+        return True, email
 
     def on_message(self, message):
         self.log('got a message: %s' % message)
-        self.broadcast_event_not_me("message", message)
+        self.broadcast_event_not_me("message",{
+            "sender" : self.session["email"],
+            "content" : message})
         return True, message
+
+    def on_createroom(self, room):
+        pass
+
+    def on_exitroom(self, room):
+        pass
+
+    def on_searchroom(self, room):
+        pass
+
+    def on_searchinchat(self, ):
+        pass
