@@ -1,14 +1,18 @@
 from gevent import monkey
 from flask import Flask, Response, render_template, request
+from flask.ext.sqlalchemy import SQLAlchemy
 from socketio import socketio_manage
 from socketio.namespace import BaseNamespace
 from socketio.mixins import BroadcastMixin
+
 
 monkey.patch_all()
 
 application = Flask(__name__)
 application.debug = True
 application.config['PORT'] = 5000
+application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/chat.db'
+db = SQLAlchemy(application)
 
 
 @application.route('/', methods=['GET'])
@@ -62,3 +66,18 @@ class ChatNamespace(BaseNamespace, BroadcastMixin):
 
     def on_searchinchat(self, ):
         pass
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True)
+    email = db.Column(db.String(120), unique=True)
+    password = db.Column(db.String(20), unique=True)
+
+    def __init__(self, username, email, password):
+        self.username = username
+        self.email = email
+        self.password = password
+
+    def __repr__(self):
+        return '<User %r>' % self.username
