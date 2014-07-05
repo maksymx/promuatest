@@ -8,16 +8,35 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta http-equiv="cache-control" content="no-cache" />
     <title>PROM UA test chat</title>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/jquery.validate.min.js"></script>
+    <script src="{{ url_for('static', filename='scripts/socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/chat.js') }}"></script>
 </head>
 <body>
     <header>
         <h1>Welcome to PROM UA test chat</h1>
     </header>
         <section>
-            <form class="join-chat">
-                <label>Type your email to join the chat</label>
+{#            <form class="join-chat">#}
+{#                <label>Type your email to join the chat</label>#}
+{#                <input name="email" type="email">#}
+{#                <input type="submit" value="Join">#}
+{#            </form>#}
+
+            <form class="login">
+                <label>Type your login and password join the chat</label>
+                <input name="username" type="text">
+                <input name="pass" type="password">
+                <input type="submit" value="Login">
+            </form>
+
+            <form class="register" style="display:none;">
+                <label>Please register to join our chat!</label>
+                <input name="username" type="text">
                 <input name="email" type="email">
-                <input type="submit" value="Join">
+                <input name="pass" type="password">
+                <input type="submit" value="Register">
             </form>
 
             <ul class="messages" style="display:none;"></ul>
@@ -26,12 +45,8 @@
                 <textarea name="message" required></textarea>
                 <input type="submit" value="send">
             </form>
+
         </section>
     <footer></footer>
-
-    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/jquery.validate.min.js"></script>
-    <script src="{{ url_for('static', filename='scripts/socket.io.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/chat.js') }}"></script>
 </body>
 </html>

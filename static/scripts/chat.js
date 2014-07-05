@@ -18,21 +18,70 @@
             this.socket.emit('join', email, onJoin);
         },
 
+        login: function(username, password, onLogin){
+            this.socket.emit('login', username, password, onLogin)
+        },
+
+        register: function(email, username, password, onRegister){
+            this.socket.emit('register', username, email, password, onRegister)
+        },
+
         sendMessage : function(message, onSent) {
             this.socket.emit('message', message, onSent);
         }
 
+
+
     };  
 
     var bindUI = function(){
-        $(".join-chat").validate({
+//        $(".join-chat").validate({
+//            submitHandler: function(form) {
+//                chatAPI.join($(form).find("[name='email']").val(),
+//                    function(joined, name) {
+//                        if(joined){
+//                            alert("You've joined PROM UA CHAT");
+//                            $(form).hide();
+//                            $(".compose-message-form").show();
+//                        }
+//                    }
+//                );
+//            }
+//        });
+
+        $(".login").validate({
             submitHandler: function(form) {
-                chatAPI.join($(form).find("[name='email']").val(), 
-                    function(joined, name) {
-                        if(joined){
-                            alert("You've joined PROM UA CHAT");
+                var username = $(form).find("[name='username']").val();
+                var passwd = $(form).find("[name='pass']").val();
+                chatAPI.login(username, passwd,
+                    function(logged, username){
+                        if(logged){
+                            alert("User "+username+" logged in successfully");
                             $(form).hide();
                             $(".compose-message-form").show();
+                        }else{
+                            alert('Username or Password is invalid \n' +
+                                'Please try to login again or register');
+                            $(".register").show();
+                        }
+                    }
+                );
+            }
+        });
+
+        $(".register").validate({
+            submitHandler: function(form) {
+                var username = $(form).find("[name='username']").val();
+                var passwd = $(form).find("[name='pass']").val();
+                var email = $(form).find("[name='email']").val();
+                chatAPI.register(email, username, passwd,
+                    function(registered, username){
+                        if(registered){
+                            alert("User "+username+" successfully registered");
+                            $(form).hide();
+                            $(".login").show();
+                        }else{
+                            alert('Please try again later');
                         }
                     }
                 );
@@ -48,8 +97,7 @@
                                 jQuery("<li>").html(
                                     "<b>Me</b>: " + message
                                 )
-                            );
-                            $(".messages").show();
+                            ).show();
                         }
                     });
             }
@@ -60,8 +108,7 @@
                 jQuery("<li>").html(
                     "<b>" + message.sender + "</b>: " + message.content
                 )
-            );
-            $(".messages").show();
+            ).show();
         };
     };
 
