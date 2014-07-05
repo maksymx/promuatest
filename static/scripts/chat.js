@@ -22,8 +22,12 @@
             this.socket.emit('login', username, password, onLogin)
         },
 
-        register: function(email, username, password, onRegister){
+        register: function(username, email, password, onRegister){
             this.socket.emit('register', username, email, password, onRegister)
+        },
+
+        create_room: function(room, onCreate){
+            this.socket.emit('createroom', room, onCreate)
         },
 
         sendMessage : function(message, onSent) {
@@ -59,6 +63,7 @@
                             alert("User "+username+" logged in successfully");
                             $(form).hide();
                             $(".compose-message-form").show();
+                            $(".create-room").show();
                         }else{
                             alert('Username or Password is invalid \n' +
                                 'Please try to login again or register');
@@ -74,7 +79,7 @@
                 var username = $(form).find("[name='username']").val();
                 var passwd = $(form).find("[name='pass']").val();
                 var email = $(form).find("[name='email']").val();
-                chatAPI.register(email, username, passwd,
+                chatAPI.register(username, email, passwd,
                     function(registered, username){
                         if(registered){
                             alert("User "+username+" successfully registered");
@@ -96,6 +101,22 @@
                             $(".messages").append(
                                 jQuery("<li>").html(
                                     "<b>Me</b>: " + message
+                                )
+                            ).show();
+                        }
+                    });
+            }
+        });
+
+        $(".create-room").validate({
+            submitHandler: function(form) {
+                var roomname = $(form).find("[name='roomname']").val();
+                chatAPI.create_room(roomname,
+                    function(sent, room){
+                        if(sent){
+                            $(".rooms").append(
+                                jQuery("<li>").html(
+                                    "<b>"+room+"</b>"
                                 )
                             ).show();
                         }

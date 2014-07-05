@@ -24,20 +24,34 @@
 {#                <input type="submit" value="Join">#}
 {#            </form>#}
 
+            <form class="create-room" style="display:none">
+                <label>Create new room</label>
+                <label for="roomname">Room name</label>
+                    <input name="roomname" type="text">
+                <input type="submit" value="+">
+            </form>
+
             <form class="login">
                 <label>Type your login and password join the chat</label>
-                <input name="username" type="text">
-                <input name="pass" type="password">
+                <label for="username">Username</label>
+                    <input name="username" type="text">
+                <label for="pass">Password</label>
+                    <input name="pass" type="password">
                 <input type="submit" value="Login">
             </form>
 
             <form class="register" style="display:none;">
                 <label>Please register to join our chat!</label>
-                <input name="username" type="text">
-                <input name="email" type="email">
-                <input name="pass" type="password">
+                <label for="username">Username</label>
+                    <input name="username" type="text">
+                <label for="email">Email</label>
+                    <input name="email" type="email">
+                <label for="pass">Password</label>
+                    <input name="pass" type="password">
                 <input type="submit" value="Register">
             </form>
+
+            <ul class="rooms"></ul>
 
             <ul class="messages" style="display:none;"></ul>
 

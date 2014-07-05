@@ -1,9 +1,8 @@
 from datetime import datetime
 
 from gevent import monkey
-from flask import Flask, Response, session, request, flash, url_for, redirect, render_template, abort ,g
+from flask import Flask, Response, request, render_template
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.login import LoginManager, login_user , logout_user , current_user , login_required
 from socketio import socketio_manage
 from socketio.namespace import BaseNamespace
 from socketio.mixins import BroadcastMixin
@@ -18,18 +17,11 @@ application.config['PORT'] = 5000
 application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 
 db = SQLAlchemy(application)
-login_manager = LoginManager()
-login_manager.init_app(application)
-login_manager.login_view = 'login'
-
 
 ##################### VIEWS ###########################
 @application.route('/', methods=['GET'])
 def landing():
     return render_template('landing.html')
-
-##### LOGIN & REGISTRATION #####
-
 
 ##### SOCKET PART #######
 @application.route('/socket.io/<path:remaining>')
@@ -91,8 +83,15 @@ class ChatNamespace(BaseNamespace, BroadcastMixin):
         self.session['user'] = username
         return True, username
 
-    def on_createroom(self, room):
-        pass
+    def on_createroom(self, roomname):
+        try:
+            room = Room(roomname)
+            db.session.add(room)
+            db.session.commit()
+            self.log("%s <<<<<<<<<<"% roomname)
+            return True, roomname
+        except:
+            return False
 
     def on_exitroom(self, room):
         pass
@@ -107,13 +106,13 @@ class ChatNamespace(BaseNamespace, BroadcastMixin):
 ###################### ORM models ##################################
 class User(db.Model):
     __tablename__ = "users"
-    id = db.Column('user_id',db.Integer , primary_key=True)
-    username = db.Column('username', db.String(20), unique=True , index=True)
-    password = db.Column('password' , db.String(10))
-    email = db.Column('email',db.String(50),unique=True , index=True)
-    registered_on = db.Column('registered_on' , db.DateTime)
+    id = db.Column('user_id', db.Integer, primary_key=True)
+    username = db.Column('username', db.String(20), unique=True, index=True)
+    password = db.Column('password', db.String(10))
+    email = db.Column('email',db.String(50), unique=True, index=True)
+    registered_on = db.Column('registered_on', db.DateTime)
 
-    def __init__(self, username ,password , email):
+    def __init__(self, username, password, email):
         self.username = username
         self.password = password
         self.email = email
@@ -123,15 +122,24 @@ class User(db.Model):
         return '<User %r>' % self.username
 
 
-# class Room(db.Model):
-#     __tablename__ = "rooms"
-#     id = db.Column('user_id',db.Integer , primary_key=True)
-#     roomname = db.Column('username', db.String(20), unique=True , index=True)
-#     messages = db.relationship
-#
-#     def __init__(self):
-#         pass
-#
-#
-# class Message(db.Model):
-#     __tablename__ = "messages"
+class Room(db.Model):
+    __tablename__ = "rooms"
+    id = db.Column('room_id', db.Integer, primary_key=True)
+    roomname = db.Column('roomname', db.String(20), unique=True, index=True)
+    messages = db.relationship('Message', backref='room',
+                               lazy='dynamic')
+
+    def __init__(self, roomname):
+        self.roomname = roomname
+
+
+class Message(db.Model):
+    __tablename__ = "messages"
+    id = db.Column('message_id', db.Integer, primary_key=True)
+    user = db.Column('username', db.String(20), index=True)
+    text = db.Column('text', db.Text(200), index=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('rooms.room_id'))
+
+    def __init__(self, user, text):
+        self.user = user
+        self.text = text
