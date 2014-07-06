@@ -1,42 +1,116 @@
-import json
-from datetime import datetime
-
-from gevent import monkey
-from flask import Flask, Response, request, render_template
-from flask.ext.sqlalchemy import SQLAlchemy
+import re
+import unicodedata
 from socketio import socketio_manage
 from socketio.namespace import BaseNamespace
-from socketio.mixins import BroadcastMixin
+from socketio.mixins import RoomsMixin, BroadcastMixin
+from werkzeug.exceptions import NotFound
+from gevent import monkey
 
-################## INITIALIZATION #####################
+from flask import Flask, Response, request, render_template, url_for, redirect
+from flask.ext.sqlalchemy import SQLAlchemy
+
 monkey.patch_all()
 
 application = Flask(__name__)
 application.debug = True
-application.secret_key = 'why would I tell you my secret key?'
-application.config['PORT'] = 5000
 application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
-
 db = SQLAlchemy(application)
 
-##################### VIEWS ###########################
-@application.route('/', methods=['GET'])
-def landing():
-    return render_template('index.html')
 
-##### SOCKET PART #######
-@application.route('/socket.io/<path:remaining>')
-def socketio(remaining):
+############################### models #################################
+class ChatRoom(db.Model):
+    __tablename__ = 'chatrooms'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20), nullable=False)
+    slug = db.Column(db.String(50))
+    users = db.relationship('ChatUser', backref='chatroom', lazy='dynamic')
+
+    def __unicode__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return url_for('room', slug=self.slug)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        db.session.add(self)
+        db.session.commit()
+
+
+class ChatUser(db.Model):
+    __tablename__ = 'chatusers'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20), nullable=False)
+    session = db.Column(db.String(20), nullable=False)
+    chatroom_id = db.Column(db.Integer, db.ForeignKey('chatrooms.id'))
+
+    def __unicode__(self):
+        return self.name
+
+
+############################## utils ##################################
+def slugify(value):
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicode(re.sub('[^\w\s-]', '', value).strip().lower())
+    return re.sub('[-\s]+', '-', value)
+
+
+def get_object_or_404(klass, **query):
+    instance = klass.query.filter_by(**query).first()
+    if not instance:
+        raise NotFound()
+    return instance
+
+
+def get_or_create(klass, **kwargs):
     try:
-        socketio_manage(request.environ, {'/chat': ChatNamespace}, request)
-    except:
-        application.logger.error("Exception while handling socketio connection",
-                                 exc_info=True)
-    return Response()
+        return get_object_or_404(klass, **kwargs), False
+    except NotFound:
+        instance = klass(**kwargs)
+        instance.save()
+        return instance, True
 
 
-#################### NAMESPACE #########################
-class ChatNamespace(BaseNamespace, BroadcastMixin):
+def init_db():
+    db.create_all(app=application)
+
+
+# views
+@application.route('/')
+def rooms():
+    """
+    Homepage - lists all rooms.
+    """
+    context = {"rooms": ChatRoom.query.all()}
+    return render_template('rooms.html', **context)
+
+
+@application.route('/<path:slug>')
+def room(slug):
+    """
+    Show a room.
+    """
+    context = {"room": get_object_or_404(ChatRoom, slug=slug)}
+    return render_template('room.html', **context)
+
+
+@application.route('/create', methods=['POST'])
+def create():
+    """
+    Handles post from the "Add room" form on the homepage, and
+    redirects to the new room.
+    """
+    name = request.form.get("name")
+    if name:
+        room, created = get_or_create(ChatRoom, name=name)
+        return redirect(url_for('room', slug=room.slug))
+    return redirect(url_for('rooms'))
+
+
+class ChatNamespace(BaseNamespace, RoomsMixin, BroadcastMixin):
+    nicknames = []
+
     def initialize(self):
         self.logger = application.logger
         try:
@@ -47,106 +121,45 @@ class ChatNamespace(BaseNamespace, BroadcastMixin):
     def log(self, message):
         self.logger.info("[{0}] {1}".format(self.socket.sessid, message))
 
-    def recv_connect(self):
-        self.log("New connection")
+    def on_join(self, room):
+        self.room = room
+        self.join(room)
+        return True
+
+    def on_nickname(self, nickname):
+        self.log('Nickname: {0}'.format(nickname))
+        self.nicknames.append(nickname)
+        self.session['nickname'] = nickname
+        self.broadcast_event('announcement', '%s has connected' % nickname)
+        self.broadcast_event('nicknames', self.nicknames)
+        return True, nickname
 
     def recv_disconnect(self):
-        self.log("Client disconnected")
+        # Remove nickname from the list.
+        self.log('Disconnected')
+        nickname = self.session['nickname']
+        self.nicknames.remove(nickname)
+        self.broadcast_event('announcement', '%s has disconnected' % nickname)
+        self.broadcast_event('nicknames', self.nicknames)
+        self.disconnect(silent=True)
+        return True
 
-    def on_join(self, email):
-        self.log("%s joined chat" % email)
-        self.session['email'] = email
-        return True, email
-
-    def on_message(self, message):
-        self.log('got a message: %s' % message)
-        self.broadcast_event_not_me("message",{
-            "sender" : self.session["email"],
-            "content" : message})
-        return True, message
-
-    def on_register(self, username, email, passwd):
-        try:
-            user = User(username=username,
-                        password=passwd,
-                        email=email)
-            db.session.add(user)
-            db.session.commit()
-            return True, username
-        except:
-            return False, username
-
-    def on_login(self, username, passwd):
-        rooms = list()
-        registered_user = User.query.filter_by(username=username,password=passwd).first()
-        if registered_user is None:
-            return False
-        self.log("User %s logged in successfully" % username)
-        self.session['user'] = username
-        for room in Room.query.all():
-            rooms.append(room.roomname)
-        self.log(json.dumps(rooms))
-        return True, username, json.dumps(rooms)
-
-    def on_createroom(self, roomname):
-        try:
-            room = Room(roomname)
-            db.session.add(room)
-            db.session.commit()
-            return True, roomname
-        except:
-            return False
-
-    def on_exitroom(self, room):
-        pass
-
-    def on_searchroom(self, room):
-        pass
-
-    def on_searchinchat(self, message):
-        pass
+    def on_user_message(self, msg):
+        self.log('User message: {0}'.format(msg))
+        self.emit_to_room(self.room, 'msg_to_room',
+            self.session['nickname'], msg)
+        return True
 
 
-###################### ORM models ##################################
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column('user_id', db.Integer, primary_key=True)
-    username = db.Column('username', db.String(20), unique=True, index=True)
-    password = db.Column('password', db.String(10))
-    email = db.Column('email',db.String(50), unique=True, index=True)
-    registered_on = db.Column('registered_on', db.DateTime)
-
-    def __init__(self, username, password, email):
-        self.username = username
-        self.password = password
-        self.email = email
-        self.registered_on = datetime.utcnow()
-
-    def __repr__(self):
-        return '<User %r>' % self.username
+@application.route('/socket.io/<path:remaining>')
+def socketio(remaining):
+    try:
+        socketio_manage(request.environ, {'/chat': ChatNamespace}, request)
+    except:
+        application.logger.error("Exception while handling socketio connection",
+                         exc_info=True)
+    return Response()
 
 
-class Room(db.Model):
-    __tablename__ = "rooms"
-    id = db.Column('room_id', db.Integer, primary_key=True)
-    roomname = db.Column('roomname', db.String(20), unique=True, index=True)
-    messages = db.relationship('Message', backref='room',
-                               lazy='dynamic')
-
-    def __init__(self, roomname):
-        self.roomname = roomname
-
-    def __repr__(self):
-        return '<Room %r>' % self.roomname
-
-
-class Message(db.Model):
-    __tablename__ = "messages"
-    id = db.Column('message_id', db.Integer, primary_key=True)
-    user = db.Column('username', db.String(20), index=True)
-    text = db.Column('text', db.Text(200), index=True)
-    room_id = db.Column(db.Integer, db.ForeignKey('rooms.room_id'))
-
-    def __init__(self, user, text):
-        self.user = user
-        self.text = text
+if __name__ == '__main__':
+    application.run()
