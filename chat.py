@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from gevent import monkey
@@ -21,7 +22,7 @@ db = SQLAlchemy(application)
 ##################### VIEWS ###########################
 @application.route('/', methods=['GET'])
 def landing():
-    return render_template('landing.html')
+    return render_template('index.html')
 
 ##### SOCKET PART #######
 @application.route('/socket.io/<path:remaining>')
@@ -39,7 +40,7 @@ class ChatNamespace(BaseNamespace, BroadcastMixin):
     def initialize(self):
         self.logger = application.logger
         try:
-            db.create_all()
+            db.create_all()  # Creating a database
         except:
             self.log("Socketio session started")
 
@@ -76,19 +77,22 @@ class ChatNamespace(BaseNamespace, BroadcastMixin):
             return False, username
 
     def on_login(self, username, passwd):
+        rooms = list()
         registered_user = User.query.filter_by(username=username,password=passwd).first()
         if registered_user is None:
             return False
         self.log("User %s logged in successfully" % username)
         self.session['user'] = username
-        return True, username
+        for room in Room.query.all():
+            rooms.append(room.roomname)
+        self.log(json.dumps(rooms))
+        return True, username, json.dumps(rooms)
 
     def on_createroom(self, roomname):
         try:
             room = Room(roomname)
             db.session.add(room)
             db.session.commit()
-            self.log("%s <<<<<<<<<<"% roomname)
             return True, roomname
         except:
             return False
@@ -99,7 +103,7 @@ class ChatNamespace(BaseNamespace, BroadcastMixin):
     def on_searchroom(self, room):
         pass
 
-    def on_searchinchat(self, ):
+    def on_searchinchat(self, message):
         pass
 
 
@@ -131,6 +135,9 @@ class Room(db.Model):
 
     def __init__(self, roomname):
         self.roomname = roomname
+
+    def __repr__(self):
+        return '<Room %r>' % self.roomname
 
 
 class Message(db.Model):

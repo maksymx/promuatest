@@ -58,12 +58,18 @@
                 var username = $(form).find("[name='username']").val();
                 var passwd = $(form).find("[name='pass']").val();
                 chatAPI.login(username, passwd,
-                    function(logged, username){
+                    function(logged, username, rooms){
                         if(logged){
                             alert("User "+username+" logged in successfully");
                             $(form).hide();
                             $(".compose-message-form").show();
                             $(".create-room").show();
+                            for(i=0; i<JSON.parse(rooms).length; i++){
+                                $(".rooms").append(
+                                jQuery("<li>").html(
+                                  "<b>"+JSON.parse(rooms)[i]+"</b>"
+                                )).show();
+                            }
                         }else{
                             alert('Username or Password is invalid \n' +
                                 'Please try to login again or register');
