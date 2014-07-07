@@ -6,15 +6,26 @@ from socketio.mixins import RoomsMixin, BroadcastMixin
 from werkzeug.exceptions import NotFound
 from gevent import monkey
 
-from flask import Flask, Response, request, render_template, url_for, redirect
+from flask import Flask, Response, request, render_template, url_for, redirect, flash
+from flask import session as flask_session
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.login import LoginManager, login_user , logout_user , current_user , login_required
 
 monkey.patch_all()
 
 application = Flask(__name__)
 application.debug = True
+application.secret_key = 'why would I tell you my secret key?'
 application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 db = SQLAlchemy(application)
+
+login_manager = LoginManager()
+login_manager.init_app(application)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(id):
+    return ChatUser.query.get(int(id))
 
 
 ############################### models #################################
@@ -40,13 +51,23 @@ class ChatRoom(db.Model):
 
 class ChatUser(db.Model):
     __tablename__ = 'chatusers'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(20), nullable=False)
+    id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True, default=1)
+    name = db.Column(db.String(20), nullable=False, unique=True, index=True)
+    password = db.Column('password', db.String(10))
+    email = db.Column('email',db.String(50), unique=True, index=True)
     session = db.Column(db.String(20), nullable=False)
     chatroom_id = db.Column(db.Integer, db.ForeignKey('chatrooms.id'))
 
+    def __init__(self, name, password, email):
+        self.name = name
+        self.password = password
+        self.email = email
+
     def __unicode__(self):
         return self.name
+
+    def __repr__(self):
+        return '<User %r>' % self.name
 
 
 ############################## utils ##################################
@@ -76,8 +97,9 @@ def init_db():
     db.create_all(app=application)
 
 
-# views
+############################# views #####################################
 @application.route('/')
+@login_required
 def rooms():
     """
     Homepage - lists all rooms.
@@ -87,6 +109,7 @@ def rooms():
 
 
 @application.route('/<path:slug>')
+@login_required
 def room(slug):
     """
     Show a room.
@@ -96,6 +119,7 @@ def room(slug):
 
 
 @application.route('/create', methods=['POST'])
+@login_required
 def create():
     """
     Handles post from the "Add room" form on the homepage, and
@@ -108,6 +132,50 @@ def create():
     return redirect(url_for('rooms'))
 
 
+@application.route('/register', methods=['GET','POST'])
+def register():
+    if request.method == 'GET':
+        return render_template('register.html')
+    user = ChatUser(request.form['username'],
+                    request.form['password'],
+                    request.form['email'])
+    db.session.add(user)
+    db.session.commit()
+    flash('User successfully registered')
+    return redirect(url_for('login'))
+
+
+@application.route('/login', methods=['GET','POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+
+    username = request.form['username']
+    password = request.form['password']
+
+    # remember_me = False
+    # if 'remember_me' in request.form:
+    #     remember_me = True
+
+    registered_user = ChatUser.query.filter_by(name=username,password=password).first()
+    if registered_user is None:
+        flash('Username or Password is invalid' , 'error')
+        return redirect(url_for('login'))
+
+    login_user(registered_user)
+    # flask_session['logged'] = True
+    # flask_session['nickname'] = username
+    return redirect(url_for('rooms'))
+
+@application.route('/logout')
+def logout():
+    logout_user()
+    flask_session.pop('logged', None)
+    flask_session.pop('nickname', None)
+    return redirect(url_for('rooms'))
+
+
+####################### NAMESPACES ##############################
 class ChatNamespace(BaseNamespace, RoomsMixin, BroadcastMixin):
     nicknames = []
 
@@ -125,6 +193,26 @@ class ChatNamespace(BaseNamespace, RoomsMixin, BroadcastMixin):
         self.room = room
         self.join(room)
         return True
+
+    # def on_register(self, name, email, passwd):
+    #     try:
+    #         user = ChatUser(name=name, password=passwd, email=email)
+    #         db.session.add(user)
+    #         db.session.commit()
+    #         return True, name
+    #     except:
+    #         return False, name
+    #
+    # def on_login(self, username, passwd):
+    #     registered_user = ChatUser.query.filter_by(username=username,password=passwd).first()
+    #     if registered_user is None:
+    #         return False
+    #     self.log("User %s logged in successfully" % username)
+    #     self.nicknames.append(username)
+    #     self.session['nickname'] = username
+    #     self.broadcast_event('announcement', '%s has connected' % username)
+    #     self.broadcast_event('nicknames', self.nicknames)
+    #     return True, username
 
     def on_nickname(self, nickname):
         self.log('Nickname: {0}'.format(nickname))

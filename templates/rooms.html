@@ -7,6 +7,31 @@
 {% endblock %}
 
 {% block content %}
+
+    <!--<div class="form-horizontal">-->
+        <!--<form class="login">-->
+            <!--<label>Type your login and password join the chat</label>-->
+            <!--<label for="username">Username</label>-->
+                <!--<input name="username" type="text">-->
+            <!--<label for="pass">Password</label>-->
+                <!--<input name="pass" type="password">-->
+            <!--<input type="submit" value="Login">-->
+        <!--</form>-->
+    <!--</div>-->
+
+    <!--<div class="form-horizontal">-->
+        <!--<form class="register" style="display:none;">-->
+            <!--<label>Please register to join our chat!</label>-->
+            <!--<label for="username">Username</label>-->
+                <!--<input name="username" type="text">-->
+            <!--<label for="email">Email</label>-->
+                <!--<input name="email" type="email">-->
+            <!--<label for="pass">Password</label>-->
+                <!--<input name="pass" type="password">-->
+            <!--<input type="submit" value="Register">-->
+        <!--</form>-->
+    <!--</div>-->
+
     {% for room in rooms %}
     <div class="room">
         <h1><a href="{{ room.get_absolute_url() }}">{{ room }}</a></h1>

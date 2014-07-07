@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ room }}{% endblock %}
+{% block title %} Welcome in {{ room }}! {% endblock %}
 
 {% block extra_js %}
 <script type="text/javascript">
@@ -10,14 +10,19 @@
 {% endblock %}
 
 {% block content %}
+
+        <div class="leave">
+            <a href="/">Leave room</a>
+        </div>
+
 <div id="chat">
-    <div id="nickname">
-        <form id="set-nickname" class="wrap">
-            <p>Please type in your nickname and press enter.</p>
-            <input id="nick">
-            <p id="nickname-err">Nickname already in use</p>
-        </form>
-    </div>
+    <!--<div id="nickname">-->
+        <!--<form id="set-nickname" class="wrap">-->
+            <!--<p>Please type in your nickname and press enter.</p>-->
+            <!--<input id="nick">-->
+            <!--<p id="nickname-err">Nickname already in use</p>-->
+        <!--</form>-->
+    <!--</div>-->
     <div id="connecting">
         <div class="wrap">Connecting to socket.io server</div>
     </div>

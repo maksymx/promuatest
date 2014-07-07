@@ -1,7 +1,8 @@
 $(function() {
 
     var WEB_SOCKET_SWF_LOCATION = '/static/js/socketio/WebSocketMain.swf',
-        socket = io.connect('/chat');
+
+    socket = io.connect('/chat');
 
     socket.on('connect', function () {
         $('#chat').addClass('connected');
@@ -34,22 +35,34 @@ $(function() {
         message('System', e ? e : 'A unknown error occurred');
     });
 
-    function message (from, msg) {
+    function message(from, msg) {
         $('#lines').append($('<p>').append($('<b>').text(from), msg));
     }
 
-    // DOM manipulation
+    function getCookie(cname) {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' ') c = c.substring(1);
+            if (c.indexOf(name) != -1) return c.substring(name.length,c.length);
+        }
+    return "";
+}
+
+        // DOM manipulation
     $(function () {
-        $('#set-nickname').submit(function (ev) {
-            socket.emit('nickname', $('#nick').val(), function (set) {
+            var nick = getCookie('nickname');
+            var logged = getCookie('logged');
+            console.log(">>>>>>>>>>>>>>>"+logged);
+            socket.emit('nickname', nick, function (set) {
                 if (set) {
                     clear();
                     return $('#chat').addClass('nickname-set');
                 }
                 $('#nickname-err').css('visibility', 'visible');
             });
-            return false;
-        });
+
 
         $('#send-message').submit(function () {
             message('me', $('#message').val());
