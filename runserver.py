@@ -1,9 +1,10 @@
-from chat import application
+from chat import application, init_db
 from gevent import monkey
 from socketio.server import SocketIOServer
 
 
 monkey.patch_all()
+init_db()
 
 if __name__ == '__main__':
     SocketIOServer(
