@@ -65,7 +65,7 @@ class ChatMessages(db.Model):
 
 class ChatUser(db.Model):
     __tablename__ = 'chatusers'
-    id = db.Column('user_id', db.Integer, primary_key=True, nullable=False, autoincrement=True, default=1)
+    id = db.Column('user_id', db.Integer, primary_key=True, nullable=False, autoincrement=True)
     name = db.Column('name', db.String(20), nullable=False, unique=True, index=True)
     password = db.Column('password', db.String(10))
     email = db.Column('email', db.String(50), unique=True, index=True)
@@ -236,11 +236,18 @@ class ChatNamespace(BaseNamespace, RoomsMixin, BroadcastMixin):
         self.disconnect(silent=True)
         return True
 
-    def on_user_message(self, msg):
-        self.log('User message: {0}'.format(msg))
+    def on_user_message(self, msg, nick):
         self.emit_to_room(self.room, 'msg_to_room',
             self.session['nickname'], msg)
+        msg = ChatMessages(nick, msg)
+        db.session.add(msg)
+        db.session.commit()
         return True
+
+    def on_get_messages(self, msg):
+        messages = ChatMessages.query.filter_by(text=msg).first()
+        if messages:
+            return messages
 
 
 @application.route('/socket.io/<path:remaining>')
