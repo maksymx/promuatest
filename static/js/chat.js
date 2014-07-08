@@ -49,6 +49,25 @@ $(function() {
     return "";
     }
 
+    function parseRSS(url, container) {
+      $.ajax({
+        url: document.location.protocol + '//ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=10&callback=?&q=' + encodeURIComponent(url),
+        dataType: 'json',
+        success: function(data) {
+          //console.log(data.responseData.feed);
+          message('News from YCOMBINATOR', '');
+          $.each(data.responseData.feed.entries, function(key, value){
+            var thehtml = '<p><a href="'+value.link+'" target="_blank">'+value.title+'</a></p>';
+            $(container).append(thehtml);
+          });
+        }
+      });
+    }
+
+    window.setInterval(function(){
+        parseRSS('https://news.ycombinator.com/rss', '#lines')
+    }, 300000);
+
     // DOM manipulation
     $(function () {
             var nick = getCookie('nickname');
@@ -71,14 +90,14 @@ $(function() {
             return false;
         });
 
-        $('#find-message').submit(function () {
-            var text = $('#search').val();
-            socket.emit('get messages', text, function(msg){
-                //TODO: underline founded message
-                $("#lines").get(msg).scrollTop = 10000000;
-            });
-            return false;
-        });
+//        $('#find-message').submit(function () {
+//            var text = $('#search').val();
+//            socket.emit('get messages', text, function(msg){
+//                //TODO: underline searched message
+//                $("#lines").get(msg).scrollTop = 10000000;
+//            });
+//            return false;
+//        });
 
         function clear () {
             $('#message').val('').focus();

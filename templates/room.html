@@ -5,23 +5,19 @@
 {% block extra_js %}
 <script type="text/javascript">
     window.room = "{{ room.id }}";
-    window.msg_list = "{{ messages }}";
-
-    console.log(window.msg_list)
+//    window.msg_list = "{{ messages }}";
+//
+//    console.log(window.msg_list)
 </script>
 <script src="/static/js/chat.js"></script>
 {% endblock %}
 
 {% block content %}
 
-        <div class="leave">
-            <a class="btn btn-primary" href="/">Leave room</a>
-        </div>
-
-        <form id="form-search">
-            <input id="search">
-            <button>Find</button>
-        </form>
+        <!--<form id="form-search">-->
+            <!--<input id="search">-->
+            <!--<button>Find</button>-->
+        <!--</form>-->
 
         <div id="chat">
             <div id="connecting">
@@ -37,5 +33,9 @@
                 <input id="message">
                 <button>Send</button>
             </form>
+        </div>
+
+        <div class="leave">
+            <a class="btn btn-primary" href="/">Leave room</a>
         </div>
 {% endblock %}
