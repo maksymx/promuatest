@@ -1,14 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 
+  <span class="label label-info"><h2>Sign in to PROM UA test chat</h2></span>
+  <br clear="all">
+
   <form action="{{ url_for('login') }}" method=post class="form-horizontal">
-    <h2>Sign in to PROM UA test chat</h2>
-
-    <div class="leave">
-        <a href="{{ url_for('register') }}">Registration</a>
-    </div>
-
     <div class="control-group">
+        <label class="control-label" for="username">Username</label>
         <div class="controls">
           <input type="text" id="username" name="username" class="input-xlarge"
             placeholder="Enter Username" required>
@@ -16,9 +14,18 @@
     </div>
  
     <div class="control-group">
+        <label class="control-label" for="password">Password</label>
         <div class="controls">
           <input type="password" id="password" name="password" class="input-xlarge"
             placeholder="Enter Password" required>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input name="remember_me" type="checkbox"> Remember me
+            </label>
         </div>
     </div>
  
@@ -28,4 +35,8 @@
         </div>
     </div>
   </form>
+
+  <div class="leave">
+    <a class="btn btn-warning" href="{{ url_for('register') }}">Registration</a>
+  </div>
 {% endblock %}
