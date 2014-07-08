@@ -4,14 +4,11 @@
         <meta charset="utf-8">
         <title>{% block title %}PROM UA test chat{% endblock title %}</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/animate.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-responsive.min.css') }}">
         <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/megaphone.ico') }}" />
-        <script type="text/javascript">
-            var showForm = function() {
-                $('form').slideDown(function() {
-                    $('form input[type="text"]').focus();
-                });
-            };
-        </script>
+
     </head>
     <body>
 

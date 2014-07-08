@@ -1,5 +1,7 @@
 import re
+import json
 import unicodedata
+
 from socketio import socketio_manage
 from socketio.namespace import BaseNamespace
 from socketio.mixins import RoomsMixin, BroadcastMixin
@@ -17,6 +19,7 @@ application = Flask(__name__)
 application.debug = True
 application.secret_key = 'why would I tell you my secret key?'
 application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
+application.config['PORT'] = 5000
 db = SQLAlchemy(application)
 
 login_manager = LoginManager()
@@ -55,9 +58,10 @@ class ChatMessages(db.Model):
     text = db.Column('text', db.Text(200), index=True)
     room_id = db.Column(db.Integer, db.ForeignKey('chatrooms.room_id'))
 
-    def __init__(self, user, text):
+    def __init__(self, user, text, room):
         self.user = user
         self.text = text
+        self.room_id = room
 
     def __repr__(self):
         return '<Message %r, %r, %r>' % (self.user, self.text, self.room_id)
@@ -140,7 +144,11 @@ def room(slug):
     """
     Show a room.
     """
-    context = {"room": get_object_or_404(ChatRoom, slug=slug)}
+    room = get_object_or_404(ChatRoom, slug=slug)
+    msg = {i.text: i.user for i in ChatMessages.query.filter_by(room_id=room.id)}
+
+    context = {"room": room,
+               "messages": msg}
     return render_template('room.html', **context)
 
 
@@ -239,13 +247,13 @@ class ChatNamespace(BaseNamespace, RoomsMixin, BroadcastMixin):
     def on_user_message(self, msg, nick):
         self.emit_to_room(self.room, 'msg_to_room',
             self.session['nickname'], msg)
-        msg = ChatMessages(nick, msg)
+        msg = ChatMessages(nick, msg, room=self.room)
         db.session.add(msg)
         db.session.commit()
         return True
 
     def on_get_messages(self, msg):
-        messages = ChatMessages.query.filter_by(text=msg).first()
+        messages = ChatMessages.query.filter_by(text=msg, room_id=self.room).first()
         if messages:
             return messages
 

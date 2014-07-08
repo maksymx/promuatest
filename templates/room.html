@@ -5,6 +5,9 @@
 {% block extra_js %}
 <script type="text/javascript">
     window.room = "{{ room.id }}";
+    window.msg_list = "{{ messages }}";
+
+    console.log(window.msg_list)
 </script>
 <script src="/static/js/chat.js"></script>
 {% endblock %}
@@ -12,27 +15,27 @@
 {% block content %}
 
         <div class="leave">
-            <a href="/">Leave room</a>
+            <a class="btn btn-primary" href="/">Leave room</a>
         </div>
 
-<div id="chat">
-    <div id="connecting">
-        <div class="wrap">Connecting to socket.io server</div>
-    </div>
+        <form id="form-search">
+            <input id="search">
+            <button>Find</button>
+        </form>
 
-    <div id="messages">
-        <div id="nicknames"><span>Online:</span></div>
-        <div id="lines"></div>
-    </div>
+        <div id="chat">
+            <div id="connecting">
+                <div class="wrap">Connecting to socket.io server</div>
+            </div>
 
-    <form id="send-message">
-        <input id="message">
-        <button>Send</button>
-    </form>
+            <div id="messages">
+                <div id="nicknames"><span>Online:</span></div>
+                <div id="lines"></div>
+            </div>
 
-    <form id="find-message">
-        <input id="search">
-        <button>Find</button>
-    </form>
-</div>
+            <form id="send-message">
+                <input id="message">
+                <button>Send</button>
+            </form>
+        </div>
 {% endblock %}

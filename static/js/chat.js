@@ -6,7 +6,6 @@ $(function() {
 
     socket.on('connect', function () {
         $('#chat').addClass('connected');
-        socket.emit('join', window.room);
     });
 
     socket.on('announcement', function (msg) {
@@ -68,7 +67,7 @@ $(function() {
             message('Me', text);
             socket.emit('user message', text, nick);
             clear();
-            $('#lines').get(0).scrollTop = 10000000;
+            $('#lines').get(0).scrollTop = 50000;
             return false;
         });
 
@@ -76,6 +75,7 @@ $(function() {
             var text = $('#search').val();
             socket.emit('get messages', text, function(msg){
                 //TODO: underline founded message
+                $("#lines").get(msg).scrollTop = 10000000;
             });
             return false;
         });
