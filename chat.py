@@ -1,5 +1,4 @@
 import re
-import json
 import unicodedata
 
 from socketio import socketio_manage
@@ -16,7 +15,7 @@ from flask.ext.login import LoginManager, login_user, logout_user, login_require
 monkey.patch_all()
 
 application = Flask(__name__)
-application.debug = True
+application.debug = False
 application.secret_key = 'why would I tell you my secret key?'
 application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 application.config['PORT'] = 5000
@@ -258,18 +257,16 @@ class ChatNamespace(BaseNamespace, RoomsMixin, BroadcastMixin):
         self.disconnect(silent=True)
         return True
 
-    def on_user_message(self, msg, nick):
+    def on_user_message(self, msg):
+        self.log('User message: {0}'.format(msg))
         self.emit_to_room(self.room, 'msg_to_room',
             self.session['nickname'], msg)
-        msg = ChatMessages(nick, msg, room=self.room)
-        db.session.add(msg)
-        db.session.commit()
         return True
 
-    def on_get_messages(self, msg):
-        messages = ChatMessages.query.filter_by(text=msg, room_id=self.room).first()
-        if messages:
-            return messages
+    # def on_get_messages(self, msg):
+    #     messages = ChatMessages.query.filter_by(text=msg, room_id=self.room).first()
+    #     if messages:
+    #         return messages
 
 
 @application.route('/socket.io/<path:remaining>')

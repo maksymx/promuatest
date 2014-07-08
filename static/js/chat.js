@@ -6,6 +6,7 @@ $(function() {
 
     socket.on('connect', function () {
         $('#chat').addClass('connected');
+        socket.emit('join', window.room);
     });
 
     socket.on('announcement', function (msg) {
@@ -84,20 +85,11 @@ $(function() {
         $('#send-message').submit(function () {
             var text = $('#message').val();
             message('Me', text);
-            socket.emit('user message', text, nick);
+            socket.emit('user message', text);
             clear();
             $('#lines').get(0).scrollTop = 50000;
             return false;
         });
-
-//        $('#find-message').submit(function () {
-//            var text = $('#search').val();
-//            socket.emit('get messages', text, function(msg){
-//                //TODO: underline searched message
-//                $("#lines").get(msg).scrollTop = 10000000;
-//            });
-//            return false;
-//        });
 
         function clear () {
             $('#message').val('').focus();
