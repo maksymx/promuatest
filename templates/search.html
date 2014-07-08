@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+    <div class="leave">
+        <a class="btn btn-warning" href="{{ url_for('rooms') }}">Return to index</a>
+    </div>
+    <span class="label label-info"><h1>Search results:</h1></span>
+    <br clear="all">
+    <div class="btn-group btn-group-vertical room">
+        {% for room in rooms %}
+            <a class="btn btn-info" href="{{ room.get_absolute_url() }}">{{ room }}</a>
+        {% else %}
+        <p>There are no rooms you have tried to find!</p>
+        {% endfor %}
+    </div>
+    <br clear="all">
+{% endblock content %}
+

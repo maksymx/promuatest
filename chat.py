@@ -166,6 +166,20 @@ def create():
     return redirect(url_for('rooms'))
 
 
+@application.route('/channel_search', methods=['POST'])
+@login_required
+def channel_search():
+    """
+    Handles post from the "Search room" form on the homepage, and
+    redirects to the searched rooms list.
+    """
+    room_name = request.form.get("name")
+    if room_name:
+        context = {"rooms":
+                       ChatRoom.query.filter(ChatRoom.name.like('%'+room_name+'%')).all()}
+    return render_template('search.html', **context)
+
+
 @application.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'GET':

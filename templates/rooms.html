@@ -23,6 +23,11 @@
         <input class="btn btn-success" type="submit" id="submit" value="Add Room">
     </form>
 
+    <form class="form-inline" method="post" action="{{ url_for('channel_search') }}">
+        <input type="text" id="name" name="name" placeholder="Input room name which you want to find">
+        <input class="btn btn-success" type="submit" id="submit" value="Search">
+    </form>
+
     <div class="leave">
         <a class="btn btn-warning" href="{{ url_for('logout') }}">Logout</a>
     </div>
